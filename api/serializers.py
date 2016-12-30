@@ -1,12 +1,12 @@
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import Group
 from rest_framework import serializers
-from .models import MIDIFiles, MIDIInfo, Artist
+from .models import STUser, MusicBlock
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = User
-        fields = ('url', 'username', 'email')
+        model = STUser
+        fields = ('url', 'username', 'email', 'groups', 'avatar', 'selfIntro', 'favoriteGenres', 'city', 'is_active')
 
 
 class GroupSerializer(serializers.HyperlinkedModelSerializer):
@@ -15,22 +15,7 @@ class GroupSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('url', 'name')
 
 
-class MIDIFilesSerializer(serializers.HyperlinkedModelSerializer):
-    owner = serializers.SlugRelatedField(
-        read_only=True,
-        slug_field='id'
-    )
-
+class MusicBlockSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = MIDIFiles
-        read_only_fields = ('created', 'owner', 'parsed')
-        required_fields = 'datafile'
-
-class MIDIInfoSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = MIDIInfo
-
-
-class ArtistSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = Artist
+        model = MusicBlock
+        fields = ('midiFile', 'createdAt', 'genre', 'tempo', 'blockConfigFile', 'engineConfigFile', 'collectedBy', 'composedBy')

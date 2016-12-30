@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 """
 
 import os
+from django.utils.crypto import get_random_string
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -20,7 +21,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.10/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'znj58$6tirk&c&!a=c8f9u-br_6_rw**_waxbqy&2ej_u*nca7'
+chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
+SECRET_KEY = get_random_string(50, chars)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -31,6 +33,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'api',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -41,10 +44,10 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'allauth',
+    'cities',
     'allauth.account',
     'allauth.socialaccount',
-    'api',
-    'django_cleanup'
+    'django_cleanup',
 ]
 SITE_ID = 1
 MIDDLEWARE = [
@@ -74,7 +77,7 @@ AUTHENTICATION_BACKENDS = (
  # `allauth` specific authentication methods, such as login by e-mail
  "allauth.account.auth_backends.AuthenticationBackend",
 )
-
+AUTH_USER_MODEL = 'api.STUser'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',

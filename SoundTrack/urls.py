@@ -23,9 +23,9 @@ from rest_framework.authtoken import views as defaultViews
 router = routers.DefaultRouter()
 router.register(r'users', views.UserViewSet)
 router.register(r'groups', views.GroupViewSet)
-router.register(r'midifiles', views.MIDIFilesView)
-router.register(r'midiinfo', views.MIDIInfoView)
-router.register(r'artist', views.ArtistView)
+# router.register(r'midifiles', views.MIDIFilesView)
+# router.register(r'midiinfo', views.MIDIInfoView)
+# router.register(r'artist', views.ArtistView)
 
 
 urlpatterns = [
