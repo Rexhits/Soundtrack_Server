@@ -6,6 +6,7 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
 from rest_framework.authtoken.models import Token
+import cities
 # Create your models here.
 
 class STUser(AbstractUser):
@@ -13,7 +14,7 @@ class STUser(AbstractUser):
     birthday = models.DateField(null=True)
     selfIntro = models.CharField(max_length=200)
     favoriteGenres = models.CharField(max_length=200)
-    country = models.CharField(max_length=20, null=True)
+    contry = models.CharField(max_length=20, null=True)
     city = models.CharField(max_length=20, null=True)
 
 @receiver(post_save, sender=STUser)
@@ -33,10 +34,6 @@ class MusicBlock(models.Model):
     collectedBy = models.OneToOneField(STUser, blank=True, related_name='musicBlock_collectedBy')
     composedBy = models.ForeignKey(STUser, on_delete=models.CASCADE, related_name='musicBlock_composedBy')
 
-class Billboard(models.Model):
-    setupAt = models.DateTimeField(null=True, blank=True)
-    name = models.CharField(max_length=50)
-    info = models.CharField(max_length=120)
 
 
 # # Model for original MIDI Files
