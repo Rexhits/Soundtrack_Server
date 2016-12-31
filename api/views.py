@@ -7,7 +7,6 @@ from django.http import JsonResponse
 from .models import STUser, MusicBlock
 from SoundTrack.settings import MEDIA_ROOT
 from . import musicInfo
-import simplejson as json
 # Create your views here.
 
 @api_view(['POST'])
@@ -30,7 +29,7 @@ def create_auth(request):
     if created:
         return Response(userInfo, status=status.HTTP_201_CREATED)
     else:
-        return Response(json.dumps({'error': "user existed"}), status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': "user existed"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
