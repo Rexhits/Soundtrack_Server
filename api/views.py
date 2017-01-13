@@ -1,11 +1,16 @@
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import Group
+from django.contrib.gis.geos import Point
+from django.contrib.gis.measure import D
+from django.contrib.auth.models import User
+from django.core import serializers
+from rest_framework import filters
 from rest_framework import permissions, viewsets, parsers, status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, list_route
+from rest_framework.request import Request
 from rest_framework.response import Response
-from .serializers import UserSerializer, GroupSerializer, MusicBlockSerializer
+from .serializers import UserSerializer, GroupSerializer, MusicBlockSerializer, BillboardSerializer, MusicPieceSerializer
 from django.http import JsonResponse
-from .models import STUser, MusicBlock
-from SoundTrack.settings import MEDIA_ROOT
+from .models import STUser, MusicBlock, Billboard, MusicPiece
 from . import musicInfo
 import simplejson as json
 # Create your views here.
@@ -13,12 +18,14 @@ import simplejson as json
 @api_view(['POST'])
 @permission_classes((permissions.AllowAny, ))
 def create_auth(request):
-    userName = request.data['username']
+    userName = STUser.GenerateUsername()
+    displayName = request.data['username']
     userPassword = request.data['password']
     userEmail = request.data['email']
     u, created = STUser.objects.get_or_create(
         username=userName,
         email=userEmail,
+        displayName = displayName
     )
     newUser = u
     newUser.set_password(userPassword)
@@ -33,15 +40,61 @@ def create_auth(request):
         return Response(json.dumps({'error': "user existed"}), status=status.HTTP_400_BAD_REQUEST)
 
 
-
-
 class UserViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows users to be viewed or edited.
     """
     queryset = STUser.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    @list_route(methods=['get'], permission_classes=(permissions.IsAuthenticated,))
+    def current(self, request):
+        serialized = self.get_serializer(instance=request.user, many=False)
+        return Response(serialized.data)
 
+    @list_route(methods=['post'], permission_classes=(permissions.IsAuthenticated,))
+    def avatar(self, request):
+        user = self.request.user
+        avatar = request.data.get('avatar')
+        user.avatar = avatar
+        user.save()
+        serialized = self.get_serializer(instance=user, many=False)
+        return Response(serialized.data)
+
+
+
+class MusicBlockViewSet(viewsets.ModelViewSet):
+    queryset = MusicBlock.objects.all()
+    serializer_class = MusicBlockSerializer
+    parser_classes = (parsers.FormParser, parsers.MultiPartParser)
+    permission_classes = (permissions.IsAuthenticated,)
+    filter_backends = (filters.DjangoFilterBackend, filters.OrderingFilter,)
+    ordering = ('-createdAt')
+    def perform_create(self, serializer):
+        serializer.save(composedBy=self.request.user)
+
+class MusicPieceViewSet(viewsets.ModelViewSet):
+    queryset = MusicPiece.objects.all()
+    serializer_class = MusicPieceSerializer
+    parser_classes = (parsers.FormParser, parsers.MultiPartParser)
+    permission_classes = (permissions.IsAuthenticated,)
+
+class BillboardViewSet(viewsets.ModelViewSet):
+    queryset = Billboard.objects.all()
+    serializer_class = BillboardSerializer
+    parser_classes = (parsers.FormParser, parsers.MultiPartParser)
+    permission_classes = (permissions.IsAuthenticated,)
+    @list_route(methods=['post'], permission_classes = (permissions.IsAuthenticated,))
+    def lookup(self, request):
+        lat = float(request.data['latitude'])
+        lon = float(request.data['longitude'])
+        radius = float(request.data['distance'])
+        point = Point(lat, lon)
+        print(point)
+        result = Billboard.objects.filter(location__distance_lte=(point, D(mi=radius))).distance(point).order_by('distance')
+        serialized = self.get_serializer(instance=result, many=True)
+        print(serialized.data)
+        return Response(serialized.data)
 
 class GroupViewSet(viewsets.ModelViewSet):
     """

@@ -1,5 +1,7 @@
-from django.db import models
+from django.contrib.gis.db import models
+import random
 from django.contrib.auth.models import AbstractUser
+from django.contrib.gis.geos import Point
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.core.validators import validate_email
@@ -9,13 +11,27 @@ from rest_framework.authtoken.models import Token
 import cities
 # Create your models here.
 
+
 class STUser(AbstractUser):
-    avatar = models.ImageField()
-    birthday = models.DateField(null=True)
-    selfIntro = models.CharField(max_length=200)
-    favoriteGenres = models.CharField(max_length=200)
-    contry = models.CharField(max_length=20, null=True)
-    city = models.CharField(max_length=20, null=True)
+    email = models.EmailField(unique=True)
+    displayName = models.CharField(max_length=20, null=True, blank=True)
+    avatar = models.ImageField(upload_to='avator',null=True, blank=True)
+    birthday = models.DateField(null=True, blank=True)
+    selfIntro = models.CharField(max_length=200, null=True, blank=True)
+    favoriteGenres = models.CharField(max_length=200, null=True, blank=True)
+    country = models.CharField(max_length=20, null=True, blank=True)
+    city = models.CharField(max_length=20, null=True, blank=True)
+    def GenerateUsername():
+        i = 0
+        MAX = 1000000
+        while (i < MAX):
+            username = str(random.randint(0, MAX))
+            try:
+                STUser.objects.get(username=username)
+            except STUser.DoesNotExist:
+                return username
+            i += 1
+        raise Exception('All random username are taken')
 
 @receiver(post_save, sender=STUser)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
@@ -25,16 +41,39 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
 
 
 class MusicBlock(models.Model):
+    title = models.CharField(max_length=50, default='')
     midiFile = models.FileField()
     createdAt = models.DateTimeField(auto_now=True)
     genre = models.CharField(max_length=30)
     tempo = models.IntegerField()
-    blockConfigFile = models.FileField()
-    engineConfigFile = models.FileField()
-    collectedBy = models.OneToOneField(STUser, blank=True, related_name='musicBlock_collectedBy')
-    composedBy = models.ForeignKey(STUser, on_delete=models.CASCADE, related_name='musicBlock_composedBy')
+    configFile = models.FileField()
+    onboard = models.ForeignKey('Billboard', blank=True, null=True, related_name='blockOnBoard')
+    composedBy = models.ForeignKey(STUser, blank=True, related_name='composedBlocks', null=True, on_delete=models.CASCADE)
+    collectedBy = models.ForeignKey(STUser, related_name='collectedBlocks', null=True, blank=True, on_delete=models.CASCADE)
 
+class MusicPiece(models.Model):
+    title = models.CharField(max_length=50, default='')
+    composedBy = models.ForeignKey(STUser, blank=True, related_name='composedMusic', null=True, on_delete=models.CASCADE)
+    collectedBy = models.ForeignKey(STUser, related_name='collectedMusic', null=True, blank=True, on_delete=models.CASCADE)
+    musicBlocks = models.ForeignKey(MusicBlock, blank=True, related_name='block', null= True)
+    audioFile = models.FileField(blank=True, null=True)
+    onboard = models.ForeignKey('Billboard', blank=True, null=True, related_name='pieceOnBoard')
+    
+class Billboard(models.Model):
+    setupAt = models.DateTimeField(auto_now=True)
+    name = models.CharField(max_length=50)
+    info = models.CharField(max_length=120, null=True, blank=True)
+    address1 = models.CharField(max_length=50, null=True, blank=True)
+    address2 = models.CharField(max_length=50, null=True, blank=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    location = models.PointField(u'LocationPoint', geography=True)
+    objects = models.GeoManager()
 
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
+        self.location = Point(self.latitude, self.longitude)
+        super(Billboard, self).save()
 
 # # Model for original MIDI Files
 # class MIDIFiles(models.Model):
