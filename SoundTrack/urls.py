@@ -33,7 +33,7 @@ router.register(r'billboard', views.BillboardViewSet)
 
 urlpatterns = [
     url(r'^', include(router.urls)),
-    url(r'^users/register', views.create_auth),
+    url(r'^register/', views.create_auth),
     url(r'^api-token-auth/', defaultViews.obtain_auth_token),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^accounts/', include('allauth.urls'))

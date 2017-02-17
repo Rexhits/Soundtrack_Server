@@ -8,7 +8,7 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
 from rest_framework.authtoken.models import Token
-import cities
+from multiupload.fields import MultiFileField
 # Create your models here.
 
 
@@ -42,11 +42,10 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
 
 class MusicBlock(models.Model):
     title = models.CharField(max_length=50, default='')
-    midiFile = models.FileField()
     createdAt = models.DateTimeField(auto_now=True)
-    genre = models.CharField(max_length=30)
-    tempo = models.IntegerField()
-    configFile = models.FileField()
+    midiFile = models.FileField(upload_to="midiFile", blank=True, null= True)
+    jsonFile = models.FileField(upload_to="jsonFile", blank=True, null= True)
+    tempo = models.IntegerField(default=120)
     onboard = models.ForeignKey('Billboard', blank=True, null=True, related_name='blockOnBoard')
     composedBy = models.ForeignKey(STUser, blank=True, related_name='composedBlocks', null=True, on_delete=models.CASCADE)
     collectedBy = models.ForeignKey(STUser, related_name='collectedBlocks', null=True, blank=True, on_delete=models.CASCADE)
@@ -55,7 +54,7 @@ class MusicPiece(models.Model):
     title = models.CharField(max_length=50, default='')
     composedBy = models.ForeignKey(STUser, blank=True, related_name='composedMusic', null=True, on_delete=models.CASCADE)
     collectedBy = models.ForeignKey(STUser, related_name='collectedMusic', null=True, blank=True, on_delete=models.CASCADE)
-    musicBlocks = models.ForeignKey(MusicBlock, blank=True, related_name='block', null= True)
+    musicBlocks = models.ForeignKey(MusicBlock, blank=True, related_name='block', null=True)
     audioFile = models.FileField(blank=True, null=True)
     onboard = models.ForeignKey('Billboard', blank=True, null=True, related_name='pieceOnBoard')
     
@@ -74,6 +73,15 @@ class Billboard(models.Model):
              update_fields=None):
         self.location = Point(self.latitude, self.longitude)
         super(Billboard, self).save()
+
+class instStatus(models.Model):
+    file = models.FileField(upload_to="instStatus", blank=True, null= True)
+    block = models.ForeignKey(MusicBlock, blank=True, related_name='instStatus', null=True, on_delete=models.CASCADE)
+
+class fxStatus(models.Model):
+    file = models.FileField(upload_to="fxStatus", blank=True, null= True)
+    block = models.ForeignKey(MusicBlock, blank=True, related_name='fxStatus', null=True, on_delete=models.CASCADE)
+
 
 # # Model for original MIDI Files
 # class MIDIFiles(models.Model):

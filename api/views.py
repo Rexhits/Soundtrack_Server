@@ -10,7 +10,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from .serializers import UserSerializer, GroupSerializer, MusicBlockSerializer, BillboardSerializer, MusicPieceSerializer
 from django.http import JsonResponse
-from .models import STUser, MusicBlock, Billboard, MusicPiece
+from .models import STUser, MusicBlock, Billboard, MusicPiece, fxStatus, instStatus
 from . import musicInfo
 import simplejson as json
 # Create your views here.
@@ -70,8 +70,45 @@ class MusicBlockViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     filter_backends = (filters.DjangoFilterBackend, filters.OrderingFilter,)
     ordering = ('-createdAt')
+
     def perform_create(self, serializer):
-        serializer.save(composedBy=self.request.user)
+        block = serializer.save(composedBy=self.request.user)
+        fxfiles = self.request.FILES.getlist('fxStatus')
+        instfiles = self.request.FILES.getlist('instStatus')
+        for i in fxfiles:
+            fxStatusData = fxStatus(file=i, block=block)
+            fxStatusData.save()
+        for i in instfiles:
+            instStatusData = instStatus(file=i, block=block)
+            instStatusData.save()
+
+    def partial_update(self, request, *args, **kwargs):
+        block = self.get_object()
+        if request.data.get('title'):
+            block.title = request.data.get('title')
+        if request.data.get('midiFile'):
+            block.midiFile = request.data.get('midiFile')
+        if request.data.get('jsonFile'):
+            block.jsonFile = request.data.get('jsonFile')
+        if request.data.get('onboard'):
+            block.onboard = request.data.get('onboard')
+
+        fxfiles = self.request.FILES.getlist('fxStatus')
+        if len(fxfiles) > 0:
+            fxStatus.objects.filter(block=block).delete()
+            for i in fxfiles:
+                fxStatusData = fxStatus(file=i, block=block)
+                fxStatusData.save()
+
+        instfiles = self.request.FILES.getlist('instStatus')
+        if len(instfiles) > 0:
+            instStatus.objects.filter(block=block).delete()
+            for i in instfiles:
+                instStatusData = instStatus(file=i, block=block)
+                instStatusData.save()
+        block.save()
+        serialized = self.get_serializer(instance=block)
+        return Response(serialized.data)
 
 class MusicPieceViewSet(viewsets.ModelViewSet):
     queryset = MusicPiece.objects.all()

@@ -45,7 +45,6 @@ INSTALLED_APPS = [
     'django.contrib.gis',
     'rest_framework.authtoken',
     'allauth',
-    'cities',
     'allauth.account',
     'allauth.socialaccount',
     'django_cleanup',

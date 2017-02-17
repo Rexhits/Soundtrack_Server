@@ -1,13 +1,27 @@
 from django.contrib.auth.models import Group
 from rest_framework import serializers
-from .models import STUser, MusicBlock, Billboard, MusicPiece
+from .models import STUser, MusicBlock, Billboard, MusicPiece, fxStatus, instStatus
 from rest_framework.validators import UniqueValidator
 
+class fxStatusSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = fxStatus
+        fields = ('file',)
+
+class instStatusSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = instStatus
+        fields = ('file',)
+
 class MusicBlockSerializer(serializers.HyperlinkedModelSerializer):
+    fxStatus = fxStatusSerializer(many=True, read_only=True)
+    instStatus = instStatusSerializer(many=True, read_only=True)
+
     class Meta:
         model = MusicBlock
-        fields = ('url','title', 'midiFile', 'createdAt', 'genre', 'tempo', 'configFile', 'onboard', 'collectedBy',
-                  'composedBy')
+        fields = ('url', 'title', 'midiFile', 'jsonFile', 'fxStatus', 'instStatus', 'onboard', 'collectedBy',
+                  'composedBy', 'createdAt')
+
 class MusicPieceSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = MusicPiece
